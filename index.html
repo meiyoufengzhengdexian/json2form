@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/4.1.3/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/4.1.3/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+
+    <div id="app">
+        <div class="row">
+            <div class="col-md-6">
+
+                <form ref="form" class="form-horizontal">
+                    <div class="form-group row" v-for="(item, key) in itemList" v-show="item.show">
+                        <label :for="item.name" class="col-sm-2 control-label text-right">{{item.label}}:</label>
+                        <div class="col-sm-10">
+                            <component v-bind:is="'g-'+item.type" :item="item"></component>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" @click="showForm">button</button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-group">
+                    <li class="list-group-item" v-for="(item, key) in itemList" @click="showOptionModal(item)">{{item.name}}
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+
+        <pre>
+            {{formContent}}
+        </pre>
+        <div class="modal" tabindex="-1" role="dialog" id="optionModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">字段设置</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">是否显示</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="item-show"
+                                           id="item-show-true"
+                                           v-model="currentData.show"
+                                           :value="true">
+                                    <label class="form-check-label" for="item-show-true">是</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="item-show"
+                                           id="item-show-false"
+                                           v-model="currentData.show"
+                                           :value="false">
+                                    <label class="form-check-label" for="item-show-false">否</label>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="item-label" class="col-sm-2 col-form-label">label</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="item-label" v-model="currentData.label">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="item-type" class="col-sm-2 col-form-label">类型</label>
+                                <div class="col-sm-10">
+                                    <select class="custom-select mr-sm-2" id="item-type" v-model="currentData.type">
+                                        <option selected value="text">input</option>
+                                        <option value="radio">radio</option>
+                                        <option value="select">select</option>
+                                        <option value="checkbox">checkbox</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" v-show="currentData.type != 'text'">
+                                <label for="item-default" class="col-sm-2 col-form-label">默认值</label>
+                                <div class="col-sm-10">
+                                    <textarea class="form-control" id="item-default" v-model="currentData.default" rows="5" @input="setDefaultData"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" data-dismiss="modal" class="btn btn-primary">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.bootcss.com/vue/2.5.17/vue.js"></script>
+<script>
+    let json = {
+        "id": 1,
+        "name": "等级一得金豆比例",
+        "key": "gold1",
+        "value": "20",
+        "group": "price",
+        "hide": 0,
+        "type": "text",
+        "created_at": "2018\/9\/29 15:02:59",
+        "updated_at": "2018\/11\/14 17:53:29",
+        "deleted_at": null
+    };
+
+    Vue.component('g-text', {
+        props: ['item'],
+        template: '<input type="text"\n' +
+            'class="form-control"\n' +
+            ':id="item.name"\n' +
+            ':name="item.name"\n' +
+            '>'
+    });
+
+    Vue.component('g-radio', {
+        props: ['item'],
+        template: `
+        <div>
+            <div class="form-check form-check-inline" v-for="(option, key) in item.options" :key="key">
+                <input class="form-check-input"
+                       type="radio"
+                       :name="item.name"
+                       :id="item.name+'-'+option.value"
+                       :value="option.value">
+                <label class="form-check-label" :for="item.name+'-'+option.value">{{option.label}}</label>
+            </div>
+        </div>`,
+    });
+
+    Vue.component('g-select', {
+        props: ['item'],
+        template: `
+        <div class="form-check form-check-inline">
+            <select class="custom-select mr-sm-2" :id="item.name">
+                <option :value="option.value" v-for="(option,key) in item.options" :key="key">{{option.label}}</option>
+            </select>
+        </div>`,
+    });
+    Vue.component('g-checkbox', {
+        props: ['item'],
+        template: `
+        <div>
+            <div class="custom-control custom-checkbox mr-sm-2" v-for="(option,key) in item.options" :key="key">
+                <input type="checkbox" class="custom-control-input" :id="item.name+option.value" :name="item.name">
+                <label class="custom-control-label" :for="item.name+option.value">{{option.label}}</label>
+            </div>
+        </div>
+        `,
+    });
+
+    let app = new Vue({
+        el: "#app",
+        data: {
+            jsonStr: json,
+            itemList: [],
+            currentData: {},
+            formContent:""
+        },
+        created() {
+            console.log(this.jsonStr);
+            let objectKeys = Object.keys(this.jsonStr);
+            for (let key in objectKeys) {
+                let item = {};
+                item.name = objectKeys[key];
+                item.label = objectKeys[key];
+                item.show = true;
+                item.type = 'text';
+                item.required = false;
+                item.default = '';
+                item.options = [];
+                this.itemList.push(item);
+            }
+        },
+        methods: {
+            showForm() {
+                console.log(this.$refs);
+                console.log(this.$refs.form.innerHTML);
+                this.formContent = this.$refs.form.innerHTML
+            },
+            showOptionModal(item) {
+                this.currentData = item;
+                $('#optionModal').modal('show');
+            },
+            setDefaultData(){
+                let vthis =this;
+                if(this.currentData.default.indexOf("\n") != -1){
+                    let arr = [];
+
+                    arr = this.currentData.default.split("\n");
+                    vthis.currentData.options = [];
+                    arr.map(option =>{
+                        if(option.indexOf("-") != -1){
+                            let lableValue = option.split("-");
+                            vthis.currentData.options.push({
+                                value: lableValue[0],
+                                label: lableValue[1]
+                            });
+                        }
+                    })
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
