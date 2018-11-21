@@ -204,7 +204,8 @@
                 let vthis =this;
                 if(this.currentData.default.indexOf("\n") != -1){
                     let arr = [];
-
+                    // radio checkbox select 
+                    // 一行为一个选项， key-label 形式
                     arr = this.currentData.default.split("\n");
                     vthis.currentData.options = [];
                     arr.map(option =>{
